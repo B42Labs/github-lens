@@ -1,0 +1,31 @@
+# Binaries
+github-lens
+dist/
+
+# Configuration (contains secrets)
+config.yaml
+
+# SQLite database
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Go
+vendor/
+coverage.out
+
+# Frontend
+frontend/node_modules/
+frontend/build/
+frontend/.svelte-kit/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
