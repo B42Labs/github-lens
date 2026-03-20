@@ -150,6 +150,9 @@ CREATE TABLE sync_log (
 | `POST` | `/api/sync` | Trigger a full sync (returns `202 Accepted`, runs async) |
 | `GET` | `/api/sync/status` | Current sync status (running, last sync time) |
 | `GET` | `/api/config/orgs` | List configured organizations |
+| `GET` | `/api/repos` | List all tracked repositories (distinct org/repo pairs) |
+| `GET` | `/api/labels` | List all labels across all items |
+| `GET` | `/api/authors` | List all authors across all items |
 | `GET` | `/api/stats` | Dashboard stats (counts by org, repo, type) |
 
 ### Error Responses
@@ -171,6 +174,7 @@ Standard HTTP status codes are used (`400`, `404`, `500`, etc.).
 |---|---|---|---|
 | `q` | string | `q=auth+bug` | Full-text search across title, body, labels |
 | `type` | string | `type=pr` | Filter by `issue` or `pr` |
+| `state` | string | `state=open` | Filter by `open`, `closed`, or `merged` |
 | `org` | string | `org=my-org` | Filter by organization |
 | `repo` | string | `repo=backend-api` | Filter by repository |
 | `author` | string | `author=octocat` | Filter by author |
@@ -201,7 +205,8 @@ Standard HTTP status codes are used (`400`, `404`, `500`, etc.).
 
 **Search & Filters Bar**
 - DaisyUI `input` with search icon — debounced full-text search
-- DaisyUI `select` dropdowns for: Organization, Repository, Type (Issue/PR)
+- DaisyUI `select` dropdowns for: Organization, Repository, Type (Issue/PR), State (Open/Closed/Merged), Label, Author
+- State filter defaults to "Open" — showing only open items on first load
 - Active filters shown as DaisyUI `badge` chips with dismiss button
 - "Clear all filters" link
 
@@ -232,6 +237,9 @@ App
 │   ├── OrgSelect
 │   ├── RepoSelect
 │   ├── TypeSelect
+│   ├── StateSelect
+│   ├── LabelSelect
+│   ├── AuthorSelect
 │   └── ActiveFilterBadges
 ├── ItemsTable
 │   ├── TableHeader (sortable columns)

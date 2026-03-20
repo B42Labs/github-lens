@@ -1,0 +1,188 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.goos }}/${{ matrix.goarch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { goos: linux,   goarch: amd64, runner: ubuntu-latest }
+          - { goos: linux,   goarch: arm64, runner: ubuntu-24.04-arm }
+          - { goos: darwin,  goarch: arm64, runner: macos-latest }
+          - { goos: windows, goarch: amd64, runner: windows-latest }
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 25
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm ci && npm run build
+
+      - name: Build binary
+        env:
+          CGO_ENABLED: "0"
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        shell: bash
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          EXT=$([[ "${{ matrix.goos }}" == "windows" ]] && echo ".exe" || echo "")
+          go build -trimpath \
+            -ldflags "-s -w \
+              -X main.version=$VERSION \
+              -X main.commit=$GITHUB_SHA \
+              -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            -o github-lens${EXT} ./cmd/github-lens
+
+      - name: macOS codesign
+        if: matrix.goos == 'darwin'
+        env:
+          CERTIFICATE_P12: ${{ secrets.APPLE_CERTIFICATE_P12 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+        run: |
+          [ -z "$CERTIFICATE_P12" ] && { echo "No signing certificate, skipping"; exit 0; }
+          echo "$CERTIFICATE_P12" | base64 --decode > cert.p12
+          KEYCHAIN_PW=$(openssl rand -hex 16)
+          security create-keychain -p "$KEYCHAIN_PW" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PW" build.keychain
+          security import cert.p12 -k build.keychain \
+            -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: \
+            -s -k "$KEYCHAIN_PW" build.keychain
+
+          codesign --force --options runtime \
+            --sign "$SIGNING_IDENTITY" --timestamp github-lens
+
+          rm -f cert.p12
+
+      - name: macOS notarize
+        if: matrix.goos == 'darwin'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          [ -z "$APPLE_ID" ] && { echo "No Apple ID configured, skipping notarization"; exit 0; }
+          zip -j github-lens-notarize.zip github-lens
+          xcrun notarytool submit github-lens-notarize.zip \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_ID_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait
+          rm github-lens-notarize.zip
+
+      - name: Create archive
+        shell: bash
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          ARCHIVE=github-lens_${VERSION}_${{ matrix.goos }}_${{ matrix.goarch }}
+          # Collect files that exist
+          FILES=()
+          if [[ "${{ matrix.goos }}" == "windows" ]]; then
+            FILES+=(github-lens.exe)
+          else
+            FILES+=(github-lens)
+          fi
+          for f in README.md LICENSE config.example.yaml; do
+            [[ -f "$f" ]] && FILES+=("$f")
+          done
+          if [[ "${{ matrix.goos }}" == "windows" ]]; then
+            7z a ${ARCHIVE}.zip "${FILES[@]}"
+          else
+            tar czf ${ARCHIVE}.tar.gz "${FILES[@]}"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: archive-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: github-lens_*
+          retention-days: 1
+
+  release:
+    name: Publish Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: archive-*
+          path: dist
+          merge-multiple: true
+
+      - name: Generate checksums
+        working-directory: dist
+        run: sha256sum github-lens_* > checksums.txt
+
+      - uses: sigstore/cosign-installer@v3
+
+      - name: Sign artifacts with Cosign
+        working-directory: dist
+        run: |
+          for f in *.tar.gz *.zip checksums.txt; do
+            cosign sign-blob --yes \
+              --output-signature "${f}.sig" \
+              --output-certificate "${f}.pem" "${f}"
+          done
+
+      - uses: anchore/sbom-action/download-syft@v0
+
+      - name: Generate SBOMs
+        run: |
+          syft dir:. -o spdx-json=dist/github-lens.spdx.json
+          syft dir:. -o cyclonedx-json=dist/github-lens.cdx.json
+
+      - name: Sign SBOMs
+        working-directory: dist
+        run: |
+          for f in *.spdx.json *.cdx.json; do
+            cosign sign-blob --yes \
+              --output-signature "${f}.sig" \
+              --output-certificate "${f}.pem" "${f}"
+          done
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist/*.tar.gz
+            dist/*.zip
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes

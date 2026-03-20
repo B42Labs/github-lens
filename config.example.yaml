@@ -1,0 +1,31 @@
+# GitHub personal access token (read-only scope: repo, read:org)
+# Can also be set via GITHUB_TOKEN environment variable (takes precedence)
+# Optional for public repos — unauthenticated requests are limited to 60/hour.
+# With a token you get 5,000 requests/hour.
+# github_token: "ghp_xxxxxxxxxxxxxxxxxxxx"
+
+# Organizations to track
+organizations:
+  - name: "b42labs"
+    # Optional: only include specific repos (omit for all repos)
+    include_repos:
+      - "github-lens"
+      - "northwatch"
+      - "networking-external-address-broker"
+
+  # - name: "another-org"
+  #   # No filters = all repositories
+
+# Server settings
+server:
+  port: 8080
+  # CORS origin for cross-origin requests (e.g. during development).
+  # Leave empty for same-origin only (recommended for production).
+  # cors_origin: "http://localhost:5173"
+
+# Sync settings
+sync:
+  # Auto-sync interval (0 = manual only)
+  interval: "15m"
+  # Max concurrent API requests
+  concurrency: 5
