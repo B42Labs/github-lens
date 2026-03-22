@@ -29,7 +29,7 @@
 	let UpdatedSortIcon = $derived(sortIcon('updated_at'));
 
 	function goToPage(p: number) {
-		currentPage.set(p);
+		if (p >= 1 && p <= pages) currentPage.set(p);
 	}
 
 	function pageNumbers(current: number, total: number): (number | '...')[] {
@@ -46,16 +46,54 @@
 </script>
 
 <div class="rounded-xl border border-base-300 bg-base-100 overflow-hidden">
-	<!-- Sort controls header -->
+	<!-- Sort controls header with pagination -->
 	<div class="flex items-center gap-4 px-4 py-2.5 border-b border-base-300 bg-base-200/50 text-sm">
 		<button class="flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity" onclick={() => toggleSort('title')}>
 			Title
 			<TitleSortIcon class="w-3 h-3" />
 		</button>
-		<button class="flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity ml-auto" onclick={() => toggleSort('updated_at')}>
-			Updated
-			<UpdatedSortIcon class="w-3 h-3" />
-		</button>
+		<div class="flex items-center gap-4 ml-auto">
+			{#if pages > 1}
+				<span class="hidden sm:inline opacity-60">{total} items total</span>
+				<div class="join">
+					<button
+						class="join-item btn btn-xs"
+						aria-label="Previous page"
+						disabled={page <= 1}
+						onclick={() => goToPage(page - 1)}
+					>
+						Prev
+					</button>
+					{#each pageNumbers(page, pages) as p}
+						{#if p === '...'}
+							<span class="join-item btn btn-xs btn-disabled" aria-hidden="true">...</span>
+						{:else}
+							<button
+								class="join-item btn btn-xs"
+								class:btn-active={p === page}
+								aria-label="Go to page {p}"
+								aria-current={p === page ? 'page' : undefined}
+								onclick={() => goToPage(p as number)}
+							>
+								{p}
+							</button>
+						{/if}
+					{/each}
+					<button
+						class="join-item btn btn-xs"
+						aria-label="Next page"
+						disabled={page >= pages}
+						onclick={() => goToPage(page + 1)}
+					>
+						Next
+					</button>
+				</div>
+			{/if}
+			<button class="flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity" onclick={() => toggleSort('updated_at')}>
+				Updated
+				<UpdatedSortIcon class="w-3 h-3" />
+			</button>
+		</div>
 	</div>
 
 	<!-- Rows -->
@@ -73,38 +111,3 @@
 		{/each}
 	{/if}
 </div>
-
-{#if pages > 1}
-	<div class="flex justify-between items-center mt-4">
-		<span class="text-sm opacity-60">{total} items total</span>
-		<div class="join">
-			<button
-				class="join-item btn btn-sm"
-				disabled={page <= 1}
-				onclick={() => goToPage(page - 1)}
-			>
-				Prev
-			</button>
-			{#each pageNumbers(page, pages) as p}
-				{#if p === '...'}
-					<button class="join-item btn btn-sm btn-disabled">...</button>
-				{:else}
-					<button
-						class="join-item btn btn-sm"
-						class:btn-active={p === page}
-						onclick={() => goToPage(p as number)}
-					>
-						{p}
-					</button>
-				{/if}
-			{/each}
-			<button
-				class="join-item btn btn-sm"
-				disabled={page >= pages}
-				onclick={() => goToPage(page + 1)}
-			>
-				Next
-			</button>
-		</div>
-	</div>
-{/if}
