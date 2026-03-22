@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Navbar from '$lib/components/Navbar.svelte';
-	import StatsBar from '$lib/components/StatsBar.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import ItemsTable from '$lib/components/ItemsTable.svelte';
 	import DetailDrawer from '$lib/components/DetailDrawer.svelte';
@@ -63,7 +62,6 @@
 	<Navbar />
 
 	<main class="container mx-auto px-4 py-6 max-w-7xl flex flex-col gap-6">
-		<StatsBar />
 		<FilterBar />
 		<ItemsTable />
 	</main>

@@ -2,6 +2,7 @@
 	import { Eye } from 'lucide-svelte';
 	import ThemeToggle from './ThemeToggle.svelte';
 	import SyncButton from './SyncButton.svelte';
+	import StatsBar from './StatsBar.svelte';
 </script>
 
 <div class="navbar bg-base-100 shadow-sm sticky top-0 z-50">
@@ -11,7 +12,10 @@
 			GitHub Lens
 		</a>
 	</div>
-	<div class="flex-none gap-2">
+	<div class="flex-none gap-4">
+		<div class="hidden sm:block">
+			<StatsBar />
+		</div>
 		<SyncButton />
 		<ThemeToggle />
 	</div>

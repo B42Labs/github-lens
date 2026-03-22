@@ -5,28 +5,20 @@
 	let s = $derived($stats);
 </script>
 
-<div class="stats shadow w-full">
-	<div class="stat">
-		<div class="stat-figure text-warning">
-			<CircleDot class="w-8 h-8" />
-		</div>
-		<div class="stat-title">Open Issues</div>
-		<div class="stat-value text-warning">{s.open_issues}</div>
+<div class="flex items-center gap-4 text-sm">
+	<div class="flex items-center gap-1.5 text-warning">
+		<CircleDot class="w-4 h-4" />
+		<span class="font-medium">{s.open_issues}</span>
+		<span class="opacity-60">Issues</span>
 	</div>
-
-	<div class="stat">
-		<div class="stat-figure text-info">
-			<GitPullRequest class="w-8 h-8" />
-		</div>
-		<div class="stat-title">Open PRs</div>
-		<div class="stat-value text-info">{s.open_prs}</div>
+	<div class="flex items-center gap-1.5 text-info">
+		<GitPullRequest class="w-4 h-4" />
+		<span class="font-medium">{s.open_prs}</span>
+		<span class="opacity-60">PRs</span>
 	</div>
-
-	<div class="stat">
-		<div class="stat-figure text-accent">
-			<FolderGit2 class="w-8 h-8" />
-		</div>
-		<div class="stat-title">Repos Tracked</div>
-		<div class="stat-value text-accent">{s.repo_count}</div>
+	<div class="flex items-center gap-1.5 text-accent">
+		<FolderGit2 class="w-4 h-4" />
+		<span class="font-medium">{s.repo_count}</span>
+		<span class="opacity-60">Repos</span>
 	</div>
 </div>
