@@ -59,6 +59,7 @@ export interface ItemsQuery {
 	repo?: string;
 	author?: string;
 	label?: string;
+	since?: string;
 	sort?: string;
 	order?: string;
 	page?: number;

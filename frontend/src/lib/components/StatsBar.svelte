@@ -1,8 +1,10 @@
 <script lang="ts">
-	import { stats } from '$lib/stores';
-	import { CircleDot, GitPullRequest, FolderGit2 } from 'lucide-svelte';
+	import { stats, newItemsCount, lastVisitTimestamp } from '$lib/stores';
+	import { CircleDot, GitPullRequest, FolderGit2, Sparkles } from 'lucide-svelte';
 
 	let s = $derived($stats);
+	let newCount = $derived($newItemsCount);
+	let hasVisitHistory = $derived($lastVisitTimestamp !== null);
 </script>
 
 <div class="flex items-center gap-4 text-sm">
@@ -21,4 +23,11 @@
 		<span class="font-medium">{s.repo_count}</span>
 		<span class="opacity-60">Repos</span>
 	</div>
+	{#if hasVisitHistory && newCount > 0}
+		<div class="flex items-center gap-1.5 text-success">
+			<Sparkles class="w-4 h-4" />
+			<span class="font-medium">{newCount}</span>
+			<span class="opacity-60">New</span>
+		</div>
+	{/if}
 </div>

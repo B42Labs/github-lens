@@ -25,6 +25,11 @@ export const repos = writable<RepoInfo[]>([]);
 export const labels = writable<string[]>([]);
 export const authors = writable<string[]>([]);
 
+// "New since last visit" stores
+export const lastVisitTimestamp = writable<string | null>(null);
+export const showNewOnly = writable(false);
+export const newItemsCount = writable(0);
+
 // UI stores
 export const syncStatus = writable<SyncStatus>({ running: false, last_run: null, progress: '' });
 export const selectedItem = writable<Item | null>(null);
@@ -36,8 +41,8 @@ let toastId = 0;
 
 // Derived stores
 export const activeFilters = derived(
-	[searchQuery, selectedOrg, selectedRepo, selectedType, selectedState, selectedLabel, selectedAuthor],
-	([$q, $org, $repo, $type, $state, $label, $author]) => {
+	[searchQuery, selectedOrg, selectedRepo, selectedType, selectedState, selectedLabel, selectedAuthor, showNewOnly, lastVisitTimestamp],
+	([$q, $org, $repo, $type, $state, $label, $author, $showNew, $lastVisit]) => {
 		const filters: ActiveFilter[] = [];
 		if ($q) filters.push({ key: 'q', label: 'Search', value: $q });
 		if ($org) filters.push({ key: 'org', label: 'Org', value: $org });
@@ -46,6 +51,7 @@ export const activeFilters = derived(
 		if ($state) filters.push({ key: 'state', label: 'Status', value: $state });
 		if ($label) filters.push({ key: 'label', label: 'Label', value: $label });
 		if ($author) filters.push({ key: 'author', label: 'Author', value: $author });
+		if ($showNew && $lastVisit) filters.push({ key: 'new', label: 'New', value: 'since last visit' });
 		return filters;
 	}
 );
@@ -61,6 +67,7 @@ export async function loadItems() {
 	const thisRequest = ++loadRequestId;
 	loading.set(true);
 	try {
+		const since = get(showNewOnly) && get(lastVisitTimestamp) ? get(lastVisitTimestamp)! : undefined;
 		const result = await api.fetchItems({
 			q: get(searchQuery) || undefined,
 			type: get(selectedType) || undefined,
@@ -69,6 +76,7 @@ export async function loadItems() {
 			repo: get(selectedRepo) || undefined,
 			label: get(selectedLabel) || undefined,
 			author: get(selectedAuthor) || undefined,
+			since,
 			sort: get(sortField),
 			order: get(sortOrder),
 			page: get(currentPage),
@@ -164,6 +172,7 @@ export async function doTriggerSync() {
 					addToast('Sync completed', 'success');
 					loadItems();
 					loadStats();
+					loadNewItemsCount();
 					loadRepos();
 					loadLabels();
 					loadAuthors();
@@ -206,6 +215,7 @@ export function removeFilter(key: string) {
 	if (key === 'state') selectedState.set('');
 	if (key === 'label') selectedLabel.set('');
 	if (key === 'author') selectedAuthor.set('');
+	if (key === 'new') showNewOnly.set(false);
 	currentPage.set(1);
 }
 
@@ -217,7 +227,33 @@ export function clearAllFilters() {
 	selectedState.set('');
 	selectedLabel.set('');
 	selectedAuthor.set('');
+	showNewOnly.set(false);
 	currentPage.set(1);
+}
+
+export function initLastVisit() {
+	if (typeof window === 'undefined') return;
+	const saved = localStorage.getItem('github-lens-last-visit');
+	lastVisitTimestamp.set(saved);
+	// Defer updating the timestamp until the user leaves, so refreshing the page
+	// doesn't immediately clear the "new" indicators before the user has seen them.
+	window.addEventListener('beforeunload', () => {
+		localStorage.setItem('github-lens-last-visit', new Date().toISOString());
+	}, { once: true });
+}
+
+export async function loadNewItemsCount() {
+	const since = get(lastVisitTimestamp);
+	if (!since) {
+		newItemsCount.set(0);
+		return;
+	}
+	try {
+		const result = await api.fetchItems({ since, per_page: 1, page: 1 });
+		newItemsCount.set(result.total);
+	} catch {
+		// silently ignore
+	}
 }
 
 export function addToast(message: string, type: Toast['type'] = 'info') {

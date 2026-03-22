@@ -8,6 +8,8 @@
 		selectedState,
 		selectedLabel,
 		selectedAuthor,
+		showNewOnly,
+		lastVisitTimestamp,
 		activeFilters,
 		orgs,
 		repos,
@@ -25,6 +27,8 @@
 	let repoList = $derived($repos);
 	let labelList = $derived($labels);
 	let authorList = $derived($authors);
+	let hasLastVisit = $derived($lastVisitTimestamp !== null);
+	let isShowingNew = $derived($showNewOnly);
 
 	// Repo combobox state
 	let repoSearch = $state('');
@@ -372,6 +376,17 @@
 					</ul>
 				{/if}
 			</div>
+
+			{#if hasLastVisit}
+				<div class="divider divider-horizontal mx-0 h-6 self-center"></div>
+				<button
+					class="btn btn-sm gap-1"
+					class:btn-active={isShowingNew}
+					onclick={() => { showNewOnly.update(v => !v); currentPage.set(1); }}
+				>
+					New since last visit
+				</button>
+			{/if}
 
 		</div>
 

@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/b42labs/github-lens/internal/config"
 	"github.com/b42labs/github-lens/internal/store"
@@ -40,6 +41,13 @@ func (h *Handler) ListItems(w http.ResponseWriter, r *http.Request) {
 		Order:   r.URL.Query().Get("order"),
 		Page:    intParam(r, "page", 1),
 		PerPage: intParam(r, "per_page", 25),
+	}
+	if s := r.URL.Query().Get("since"); s != "" {
+		if _, err := time.Parse(time.RFC3339, s); err != nil {
+			writeError(w, http.StatusBadRequest, "INVALID_SINCE", "since must be RFC3339 format")
+			return
+		}
+		params.Since = s
 	}
 
 	result, err := h.store.ListItems(params)

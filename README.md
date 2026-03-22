@@ -179,6 +179,7 @@ Standard HTTP status codes are used (`400`, `404`, `500`, etc.).
 | `repo` | string | `repo=backend-api` | Filter by repository |
 | `author` | string | `author=octocat` | Filter by author |
 | `label` | string | `label=bug` | Filter by label |
+| `since` | string | `since=2025-03-20T12:00:00Z` | Only items updated at or after this ISO 8601 timestamp |
 | `sort` | string | `sort=updated_at` | Sort field (default: `updated_at`) |
 | `order` | string | `order=desc` | Sort order: `asc` or `desc` |
 | `page` | int | `page=2` | Page number (default: 1) |
@@ -191,7 +192,7 @@ Standard HTTP status codes are used (`400`, `404`, `500`, etc.).
 ### Pages & Components
 
 **Dashboard (`/`)**
-- Stats bar: total open issues, total open PRs, number of repos tracked
+- Stats bar: total open issues, total open PRs, number of repos tracked, count of items new/updated since last visit
 - Quick filter chips for orgs
 - Combined table of all open items, sorted by last updated
 - Sync button with spinner + "last synced X minutes ago" indicator
@@ -206,6 +207,7 @@ Standard HTTP status codes are used (`400`, `404`, `500`, etc.).
 **Search & Filters Bar**
 - DaisyUI `input` with search icon — debounced full-text search
 - DaisyUI `select` dropdowns for: Organization, Repository, Type (Issue/PR), State (Open/Closed/Merged), Label, Author
+- "New since last visit" toggle button — filters to items created or updated since the previous session
 - State filter defaults to "Open" — showing only open items on first load
 - Active filters shown as DaisyUI `badge` chips with dismiss button
 - "Clear all filters" link
@@ -231,7 +233,8 @@ App
 ├── StatsBar
 │   ├── StatCard (Open Issues)
 │   ├── StatCard (Open PRs)
-│   └── StatCard (Repos Tracked)
+│   ├── StatCard (Repos Tracked)
+│   └── StatCard (New Since Last Visit)
 ├── FilterBar
 │   ├── SearchInput
 │   ├── OrgSelect
@@ -240,12 +243,13 @@ App
 │   ├── StateSelect
 │   ├── LabelSelect
 │   ├── AuthorSelect
+│   ├── NewSinceLastVisitToggle
 │   └── ActiveFilterBadges
 ├── ItemsTable
 │   ├── TableHeader (sortable columns)
 │   ├── TableRow[]
 │   │   ├── TypeIcon (issue/pr)
-│   │   ├── Title + Labels (badges)
+│   │   ├── Title + Labels (badges) + NEW/UPDATED badge
 │   │   ├── Repo (org/repo)
 │   │   ├── Author (avatar + name)
 │   │   ├── Updated (relative time)
@@ -834,7 +838,6 @@ cat github-lens.spdx.json | jq '.packages | length'
 ## Future Ideas (Out of Scope for v1)
 
 - Keyboard shortcuts (j/k navigation, `/` to focus search)
-- Notification badges for new items since last visit
 - PR review status and CI check indicators
 - Bookmark/pin specific issues
 - Export filtered results as CSV

@@ -1,10 +1,21 @@
 <script lang="ts">
 	import { CircleDot, GitPullRequest, GitMerge, ChevronRight } from 'lucide-svelte';
 	import type { Item } from '$lib/types';
-	import { openDrawer } from '$lib/stores';
+	import { openDrawer, lastVisitTimestamp } from '$lib/stores';
 	import { relativeTime, labelBadgeColor } from '$lib/utils';
 
 	let { item }: { item: Item } = $props();
+
+	let lastVisit = $derived($lastVisitTimestamp);
+	let newStatus = $derived.by(() => {
+		if (!lastVisit) return null;
+		const visitTime = new Date(lastVisit).getTime();
+		const createdTime = new Date(item.created_at).getTime();
+		const updatedTime = new Date(item.updated_at).getTime();
+		if (createdTime > visitTime) return 'new';
+		if (updatedTime > visitTime) return 'updated';
+		return null;
+	});
 
 	function typeIcon(type: string, state: string) {
 		if (type === 'pr' && state === 'merged') return { icon: GitMerge, color: 'text-purple-500' };
@@ -16,7 +27,12 @@
 	let IconComponent = $derived(iconInfo.icon);
 </script>
 
-<div class="flex items-center gap-3 px-4 py-3 border-b border-base-300 last:border-b-0 hover:bg-base-200/50 transition-colors">
+<div
+	class="flex items-center gap-3 px-4 py-3 border-b border-base-300 last:border-b-0 hover:bg-base-200/50 transition-colors"
+	class:border-l-2={newStatus !== null}
+	class:border-l-success={newStatus === 'new'}
+	class:border-l-info={newStatus === 'updated'}
+>
 	<!-- Type icon -->
 	<div class="shrink-0">
 		<IconComponent class="w-5 h-5 {iconInfo.color}" />
@@ -32,6 +48,11 @@
 			<a href={item.url} target="_blank" rel="noopener noreferrer" class="hover:underline">
 				{item.title}
 			</a>
+			{#if newStatus === 'new'}
+				<span class="badge badge-xs badge-success ml-1.5">NEW</span>
+			{:else if newStatus === 'updated'}
+				<span class="badge badge-xs badge-info ml-1.5">UPDATED</span>
+			{/if}
 		</div>
 		{#if item.labels.length > 0}
 			<div class="flex flex-wrap gap-1 mt-1">

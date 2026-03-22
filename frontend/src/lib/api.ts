@@ -40,6 +40,7 @@ export async function fetchItems(query: ItemsQuery): Promise<{ items: Item[]; to
 	if (query.repo) params.set('repo', query.repo);
 	if (query.author) params.set('author', query.author);
 	if (query.label) params.set('label', query.label);
+	if (query.since) params.set('since', query.since);
 	if (query.sort) params.set('sort', query.sort);
 	if (query.order) params.set('order', query.order);
 	if (query.page) params.set('page', String(query.page));

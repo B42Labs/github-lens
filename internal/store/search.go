@@ -138,6 +138,10 @@ func buildListQuery(params ListParams) queryParts {
 		conditions = append(conditions, "',' || items.labels || ',' LIKE ? ESCAPE '\\'")
 		args = append(args, "%,"+escapeLike(params.Label)+",%")
 	}
+	if params.Since != "" {
+		conditions = append(conditions, "items.updated_at >= ?")
+		args = append(args, params.Since)
+	}
 
 	if len(conditions) > 0 {
 		qp.where = strings.Join(conditions, " AND ")

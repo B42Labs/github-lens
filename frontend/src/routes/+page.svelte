@@ -12,6 +12,8 @@
 		loadLabels,
 		loadAuthors,
 		loadSyncStatus,
+		initLastVisit,
+		loadNewItemsCount,
 		searchQuery,
 		selectedOrg,
 		selectedRepo,
@@ -19,6 +21,7 @@
 		selectedState,
 		selectedLabel,
 		selectedAuthor,
+		showNewOnly,
 		currentPage,
 		sortField,
 		sortOrder,
@@ -37,6 +40,7 @@
 		void $selectedState;
 		void $selectedLabel;
 		void $selectedAuthor;
+		void $showNewOnly;
 		void $currentPage;
 		void $sortField;
 		void $sortOrder;
@@ -45,7 +49,9 @@
 
 	// Initial data load (run once on mount)
 	onMount(() => {
+		initLastVisit();
 		loadStats();
+		loadNewItemsCount();
 		loadOrgs();
 		loadRepos();
 		loadLabels();

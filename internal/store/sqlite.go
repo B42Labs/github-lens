@@ -35,6 +35,7 @@ type ListParams struct {
 	Repo    string
 	Author  string
 	Label   string
+	Since   string
 	Sort    string
 	Order   string
 	Page    int
