@@ -31,7 +31,7 @@
 	let repoDropdownOpen = $state(false);
 	let repoInputEl: HTMLInputElement | undefined = $state();
 
-	let filteredRepos = $derived(() => {
+	let filteredRepos = $derived.by(() => {
 		const term = repoSearch.toLowerCase();
 		if (!term) return repoList;
 		return repoList.filter(
@@ -101,7 +101,7 @@
 	let labelDropdownOpen = $state(false);
 	let labelInputEl: HTMLInputElement | undefined = $state();
 
-	let filteredLabels = $derived(() => {
+	let filteredLabels = $derived.by(() => {
 		const term = labelSearch.toLowerCase();
 		if (!term) return labelList;
 		return labelList.filter((l) => l.toLowerCase().includes(term));
@@ -142,7 +142,7 @@
 	let authorDropdownOpen = $state(false);
 	let authorInputEl: HTMLInputElement | undefined = $state();
 
-	let filteredAuthors = $derived(() => {
+	let filteredAuthors = $derived.by(() => {
 		const term = authorSearch.toLowerCase();
 		if (!term) return authorList;
 		return authorList.filter((a) => a.toLowerCase().includes(term));
@@ -228,10 +228,10 @@
 
 			{#if repoDropdownOpen && !$selectedRepo}
 				<ul class="absolute z-50 mt-1 w-64 max-h-60 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-lg">
-					{#if filteredRepos().length === 0}
+					{#if filteredRepos.length === 0}
 						<li class="px-3 py-2 text-sm opacity-50">No repos found</li>
 					{:else}
-						{#each filteredRepos() as r}
+						{#each filteredRepos as r}
 							<li>
 								<button
 									class="w-full text-left px-3 py-2 text-sm hover:bg-base-200 transition-colors"
@@ -286,10 +286,10 @@
 
 			{#if labelDropdownOpen && !$selectedLabel}
 				<ul class="absolute z-50 mt-1 w-64 max-h-60 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-lg">
-					{#if filteredLabels().length === 0}
+					{#if filteredLabels.length === 0}
 						<li class="px-3 py-2 text-sm opacity-50">No labels found</li>
 					{:else}
-						{#each filteredLabels() as l}
+						{#each filteredLabels as l}
 							<li>
 								<button
 									class="w-full text-left px-3 py-2 text-sm hover:bg-base-200 transition-colors"
@@ -331,10 +331,10 @@
 
 			{#if authorDropdownOpen && !$selectedAuthor}
 				<ul class="absolute z-50 mt-1 w-64 max-h-60 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-lg">
-					{#if filteredAuthors().length === 0}
+					{#if filteredAuthors.length === 0}
 						<li class="px-3 py-2 text-sm opacity-50">No authors found</li>
 					{:else}
-						{#each filteredAuthors() as a}
+						{#each filteredAuthors as a}
 							<li>
 								<button
 									class="w-full text-left px-3 py-2 text-sm hover:bg-base-200 transition-colors"

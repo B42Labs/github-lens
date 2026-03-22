@@ -55,7 +55,10 @@ export const availableRepos = derived(repos, ($repos) => {
 });
 
 // Actions
+let loadRequestId = 0;
+
 export async function loadItems() {
+	const thisRequest = ++loadRequestId;
 	loading.set(true);
 	try {
 		const result = await api.fetchItems({
@@ -71,13 +74,17 @@ export async function loadItems() {
 			page: get(currentPage),
 			per_page: get(perPage)
 		});
+		if (thisRequest !== loadRequestId) return;
 		items.set(result.items);
 		totalItems.set(result.total);
 		totalPages.set(result.total_pages);
 	} catch (e) {
+		if (thisRequest !== loadRequestId) return;
 		addToast((e as Error).message, 'error');
 	} finally {
-		loading.set(false);
+		if (thisRequest === loadRequestId) {
+			loading.set(false);
+		}
 	}
 }
 
